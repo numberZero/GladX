@@ -28,25 +28,39 @@ local function print_set(set, prefix)
 	end
 	table.sort(list)
 	for _, value in ipairs(list) do
-		print(prefix .. value)
+		io.write(prefix, value, "\n")
+	end
+end
+
+local function print_set_oneline(set, sep)
+	local list = {}
+	for key, _ in pairs(set) do
+		list[#list + 1] = key
+	end
+	table.sort(list)
+	for _, value in ipairs(list) do
+		if _ ~= 1 then
+			io.write(sep)
+		end
+		io.write(value)
 	end
 end
 
 local spec = parse_xml(read_file("gl.xml"))
 
 local apis = {}
-for _, entry in ipairs(spec) do
-	if entry.tag == "feature" then
-		local api = apis[entry.attr.api]
+for _, section in ipairs(spec) do
+	if section.tag == "feature" then
+		local api = apis[section.attr.api]
 		if not api then
 			api = {}
-			apis[entry.attr.api] = api
+			apis[section.attr.api] = api
 		end
 		local feature = {
-			api = entry.attr.api,
-			version = entry.attr.number,
-			name = entry.attr.name,
-			xml = entry
+			api = section.attr.api,
+			version = section.attr.number,
+			name = section.attr.name,
+			xml = section
 		}
 		api[#api + 1] = feature
 		api[feature.version] = feature
@@ -78,6 +92,38 @@ for api, features in pairs(apis) do
 	end
 end
 
+local function parse_groups(enums)
+	local groups = {}
+	for _, section in ipairs(spec) do
+		if section.tag == "groups" then
+			for _, entry in ipairs(section) do
+				if entry.tag == "group" then
+					groups[#groups + 1] = {
+						name = entry.attr.name,
+						type = entry.attr.type,
+						enums = {},
+						xml = entry
+					}
+				end
+			end
+			break
+		end
+	end
+	for _, group in ipairs(groups) do
+		local gname = group.name
+		for _, entry in ipairs(group.xml) do
+			if entry.tag == "enum" then
+				local ename = entry.attr.name
+				local enum = enums[ename]
+				if enum then
+					enum.groups[gname] = true
+					group.enums[ename] = true
+				end
+			end
+		end
+	end
+end
+
 local function list_apis()
 	for api, features in pairs(apis) do
 		print("API: " .. api)
@@ -89,12 +135,30 @@ end
 
 local function list_contents(feature)
 	print("API: " .. feature.api .. " " .. feature.version)
+	local enums = feature.enums
+	for key, value in pairs(enums) do
+		enums[key] = {
+			groups = {},
+		}
+	end
+	parse_groups(enums)
 	print("Types:")
-	print_set(feature.types, " - ")
+	print_set(feature.types, " - ", "\n")
 	print("Enumerators:")
-	print_set(feature.enums, " - ")
+
+	local order = {}
+	for key, _ in pairs(enums) do
+		order[#order + 1] = key
+	end
+	table.sort(order)
+	for _, key in ipairs(order) do
+		io.write(" - ", key, ": ")
+		print_set_oneline(enums[key].groups, ", ")
+		io.write("\n")
+	end
+
 	print("Commands:")
-	print_set(feature.commands, " - ")
+	print_set(feature.commands, " - ", "\n")
 end
 
 for _, v in ipairs({...}) do
