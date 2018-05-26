@@ -98,8 +98,9 @@ local function parse_groups(enums)
 		if section.tag == "groups" then
 			for _, entry in ipairs(section) do
 				if entry.tag == "group" then
-					groups[#groups + 1] = {
-						name = entry.attr.name,
+					local gname = entry.attr.name
+					groups[gname] = {
+						name = gname,
 						type = entry.attr.type,
 						enums = {},
 						xml = entry
@@ -109,8 +110,7 @@ local function parse_groups(enums)
 			break
 		end
 	end
-	for _, group in ipairs(groups) do
-		local gname = group.name
+	for gname, group in pairs(groups) do
 		for _, entry in ipairs(group.xml) do
 			if entry.tag == "enum" then
 				local ename = entry.attr.name
@@ -122,6 +122,7 @@ local function parse_groups(enums)
 			end
 		end
 	end
+	return groups
 end
 
 local function list_apis()
@@ -141,7 +142,7 @@ local function list_contents(feature)
 			groups = {},
 		}
 	end
-	parse_groups(enums)
+	feature.groups = parse_groups(enums)
 	print("Types:")
 	print_set(feature.types, " - ", "\n")
 	print("Enumerators:")
@@ -159,6 +160,19 @@ local function list_contents(feature)
 
 	print("Commands:")
 	print_set(feature.commands, " - ", "\n")
+
+	print("Groups:")
+	local order = {}
+	for key, _ in pairs(feature.groups) do
+		order[#order + 1] = key
+	end
+	table.sort(order)
+	for _, key in ipairs(order) do
+		local group = feature.groups[key]
+		io.write(" - ", key, ": ")
+		print_set_oneline(group.enums, ", ")
+		io.write("\n")
+	end
 end
 
 for _, v in ipairs({...}) do
