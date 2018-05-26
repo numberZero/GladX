@@ -55,14 +55,12 @@ end
 
 for api, features in pairs(apis) do
 	table.sort(features, cmp_ver)
-	print("API: " .. api)
 	local base_feature = {
 		types = {},
 		enums = {},
 		commands = {},
 	}
 	for _, feature in ipairs(features) do
-		print(" - " .. feature.version .. " : " .. feature.name)
 		feature.types = shallow_copy(base_feature.types)
 		feature.enums = shallow_copy(base_feature.enums)
 		feature.commands = shallow_copy(base_feature.commands)
@@ -76,7 +74,34 @@ for api, features in pairs(apis) do
 				end
 			end
 		end
-		print_set(feature.commands, " - - ")
 		base_feature = feature
+	end
+end
+
+local function list_apis()
+	for api, features in pairs(apis) do
+		print("API: " .. api)
+		for _, feature in ipairs(features) do
+			print(" - " .. feature.version .. " : " .. feature.name)
+		end
+	end
+end
+
+local function list_contents(feature)
+	print("API: " .. feature.api .. " " .. feature.version)
+	print("Types:")
+	print_set(feature.types, " - ")
+	print("Enumerators:")
+	print_set(feature.enums, " - ")
+	print("Commands:")
+	print_set(feature.commands, " - ")
+end
+
+for _, v in ipairs({...}) do
+	if v == "--list-apis" then
+		list_apis()
+	end
+	if v == "--list-gl33" then
+		list_contents(apis["gl"]["3.3"])
 	end
 end
