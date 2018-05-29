@@ -398,10 +398,11 @@ local function generate(feature)
 		local group = feature.groups[gname]
 		if next(group.enums) and group.type == "bitmask" then
 			local t = "Bitset<" .. gname .. ", unsigned>"
-			f:write("\nstruct ", gname, ": ", t, " {\n")
+			f:write("\nstruct ", gname, " final: ", t, " {\n")
+			f:write("\tusing ", t, "::Bitset;\n")
 			for ename, _ in pairs(group.enums) do
 				local enum = feature.enums[ename]
-				f:write("\t", t, " ", neat_const_name(ename), " = atom(", enum.value, "); // ", ename, "\n")
+				f:write("\tstatic constexpr ", t, " ", neat_const_name(ename:sub(1, -5)), "{", enum.value, "}; // ", ename, "\n")
 			end
 			f:write("};\n")
 		end
