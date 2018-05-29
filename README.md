@@ -1,0 +1,2 @@
+# GladX
+GLAD for C++
