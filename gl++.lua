@@ -371,6 +371,7 @@ local function generate(feature)
 	for _, tname in ipairs(order) do
 		f:write("\ntypedef ", feature.typedefs[tname], " ", tname, ";")
 	end
+	f:write("\n")
 
 	order = {}
 	for key, _ in pairs(feature.groups) do
@@ -416,12 +417,12 @@ local function generate(feature)
 	for _, cname in ipairs(order) do
 		local command = feature.commands[cname]
 		local cname = command.name --:sub(3)
-		f:write("\n", command.rtype, " ", cname, "(\n\t")
+		f:write("\n", command.rtype, " ", cname, "(")
 		for i, param in ipairs(command.params) do
 			if i ~= 1 then
-				f:write(",\n\t")
+				f:write(",")
 			end
-			f:write(param.type, " ", param.name)
+			f:write("\n\t", param.type, " ", param.name)
 		end
 		f:write("\n);\n")
 	end
